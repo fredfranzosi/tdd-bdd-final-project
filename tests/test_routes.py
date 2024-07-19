@@ -134,15 +134,15 @@ class TestProductRoutes(TestCase):
         # Uncomment this code once READ is implemented
         #
 
-        # # Check that the location header was correct
-        # response = self.client.get(location)
-        # self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # new_product = response.get_json()
-        # self.assertEqual(new_product["name"], test_product.name)
-        # self.assertEqual(new_product["description"], test_product.description)
-        # self.assertEqual(Decimal(new_product["price"]), test_product.price)
-        # self.assertEqual(new_product["available"], test_product.available)
-        # self.assertEqual(new_product["category"], test_product.category.name)
+        # Check that the location header was correct
+        response = self.client.get(location)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        new_product = response.get_json()
+        self.assertEqual(new_product["name"], test_product.name)
+        self.assertEqual(new_product["description"], test_product.description)
+        self.assertEqual(Decimal(new_product["price"]), test_product.price)
+        self.assertEqual(new_product["available"], test_product.available)
+        self.assertEqual(new_product["category"], test_product.category.name)
 
     def test_create_product_with_no_name(self):
         """It should not Create a Product without a name"""
@@ -166,6 +166,95 @@ class TestProductRoutes(TestCase):
     #
     # ADD YOUR TEST CASES HERE
     #
+    def test_get_product(self):
+        """It should Read a Product"""
+        # Use the _create_products() method to create one product, and then assign the first
+        # product from the returned list to the test_product variable.
+        test_product = self._create_products(1)[0]
+
+        # Make a GET request to the API endpoint to retrieve the product and construct the URL by
+        # appending the test_product.id to the BASE_URL.
+        response = self.client.get(f"{BASE_URL}/{test_product.id}")
+
+        # Assert that the return code was HTTP_200_OK, to verify that the request was successful and the product was retrieved.
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Check the json that was returned and assert that it is equal to the data that you sent.
+        new_product = response.get_json()
+        self.assertEqual(new_product["name"], test_product.name)
+        self.assertEqual(new_product["description"], test_product.description)
+        self.assertEqual(Decimal(new_product["price"]), test_product.price)
+        self.assertEqual(new_product["available"], test_product.available)
+        self.assertEqual(new_product["category"], test_product.category.name)
+
+    def test_get_product_not_found(self):
+        """It should try to Read a product that is not in the Database"""
+        # Make a self.client.get() call to /products/{id} passing in an invalid product id 0
+        response = self.client.get(f"{BASE_URL}/0")
+
+        # Assert that the return code was HTTP_404_NOT_FOUND.
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_update_product(self):
+        """It should Update a Product"""
+        # Use the _create_products() method to create one product, and then assign the first
+        # product from the returned list to the test_product variable.
+        test_product = self._create_products(1)[0]
+
+        # Make a PUT request to the API endpoint to update the product
+        test_product.name = "foo"
+        response = self.client.put(f"{BASE_URL}/{test_product.id}", json=test_product.serialize())
+
+        # Assert that the return code was HTTP_200_OK, to verify that the request was successful and the product was updated.
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Check the json that was returned and assert that it is equal to the data that you sent.
+        new_product = response.get_json()
+        self.assertEqual(new_product["name"], "foo")
+
+    def test_delete_product(self):
+        """It should Delete a Product"""
+        # Use the _create_products() method to create one product, and then assign the first
+        # product from the returned list to the test_product variable.
+        test_product = self._create_products(1)[0]
+
+        # Make a GET request to the API endpoint to retrieve the product and construct the URL by
+        # appending the test_product.id to the BASE_URL.
+        response = self.client.get(f"{BASE_URL}/{test_product.id}")
+
+        # Assert that the return code was HTTP_200_OK, to verify that the request was successful and the product was retrieved.
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        ## Make a DELETE request to the API endpoint to delete the product just created
+        self.client.delete(f"{BASE_URL}/{test_product.id}")
+
+        # Make a GET request to the API endpoint to check if the product was deleted
+        response = self.client.get(f"{BASE_URL}/{test_product.id}")
+
+        # Assert that the return code was HTTP_404_NOT_FOUND
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_list_all_products(self):
+        """It should List all Products in the database"""
+        # Use the _create_products() method to create five products, and then assign 
+        # the returned list to the test_products variable.
+        test_products = self._create_products(5)
+
+        # Assert there are 5 products in the database
+        self.assertEqual(self.get_product_count(), 5)
+
+        # Make a GET request to the API endpoint to retrieve the product and construct the URL by
+        # appending the test_product.id to the BASE_URL.
+        response = self.client.get(f"{BASE_URL}")
+
+        # Assert that the return code was HTTP_200_OK, to verify that the request was successful and the product was retrieved.
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        ## Assert that each product is in the retrieved is in the initial list
+        data = response.get_json()
+        print(data)
+        for product in data:
+            self.assertIn(product, test_products)
 
     ######################################################################
     # Utility functions
