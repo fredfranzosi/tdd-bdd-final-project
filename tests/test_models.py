@@ -293,3 +293,28 @@ class TestProductModel(unittest.TestCase):
         # Assert that each product's category matches the expected category.
         for db_p in db_products:
             self.assertEqual(db_p.category, first_category)
+
+    def test_find_a_product_by_price(self):
+        """It should Find a Product by its price in the Database"""
+        # Create a batch of 10 Product objects using the ProductFactory and save them to the database.
+        product_list = []
+        for _ in range(10):
+            product = ProductFactory()
+            product_list.append(product)
+            product.create()
+
+        # Retrieve the price of the first product in the products list
+        first_price = product_list[0].price
+
+        # Count the number of occurrences of the product that have the same price in the list.
+        occurrences = len([p for p in product_list if p.price == first_price])
+
+        # Retrieve products from the database that have the specified price.
+        db_products = Product.find_by_price(first_price)
+
+        # Assert if the count of the found products matches the expected count.
+        self.assertEqual(db_products.count(), occurrences)
+
+        # Assert that each product's category matches the expected price.
+        for db_p in db_products:
+            self.assertEqual(db_p.price, first_price)
